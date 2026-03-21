@@ -113,7 +113,19 @@ claude mcp add --transport http obsidian https://your-server/mcp
 
 ## Authentication
 
-The server supports OAuth 2.1 with authorization code flow. When `OAUTH_PASSWORD` is set, clients must complete the OAuth flow to get an access token. Pre-registered clients (via `OAUTH_CLIENT_ID`/`OAUTH_CLIENT_SECRET`) skip dynamic registration.
+The server supports OAuth 2.1 with authorization code flow + PKCE.
+
+### Current limitations
+
+Out of the box, only **Claude** (Claude.ai and Claude Code) is supported as a client. The pre-registered OAuth client has hardcoded `redirect_uris` for Claude's callback URLs and `scope: claudeai`.
+
+### Adding other MCP clients
+
+To support other clients you can either:
+
+1. **Pre-register additional clients** — add more clients in `oauth_provider.py` `__init__` with the appropriate `redirect_uris` for your client.
+
+2. **Enable Dynamic Client Registration (DCR)** — in `server.py`, change `ClientRegistrationOptions(enabled=False, ...)` to `enabled=True`. This allows any MCP-compatible client to register itself automatically. Note: this means anyone who knows your server URL can register a client.
 
 ## License
 
