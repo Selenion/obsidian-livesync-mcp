@@ -1,0 +1,16 @@
+[Unit]
+Description=Obsidian MCP Server
+After=network.target couchdb.service
+Wants=couchdb.service
+
+[Service]
+Type=simple
+User=your_user
+WorkingDirectory=/opt/obsidian-mcp-server
+EnvironmentFile=/opt/obsidian-mcp-server/.env
+ExecStart=/opt/obsidian-mcp-server/venv/bin/python run.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
