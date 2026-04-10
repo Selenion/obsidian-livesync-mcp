@@ -258,7 +258,10 @@ async def obsidian_update_note(
         regex: Use regex for search-replace
     """
     doc_id = _resolve_doc_id(path)
-    existing = await db.read_note_content(doc_id)
+    try:
+        existing = await db.read_note_content(doc_id)
+    except ValueError as e:
+        return f"Error reading '{path}': {e}"
     if existing is None:
         return f"Note '{path}' not found."
 

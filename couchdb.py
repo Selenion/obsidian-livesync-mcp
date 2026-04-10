@@ -114,8 +114,16 @@ class CouchDBClient:
         for child_id in children:
             chunk = await self.get_doc(child_id)
             if chunk is None:
-                continue
+                raise ValueError(
+                    f"Chunk '{child_id}' not found for document '{doc_id}'. "
+                    "Document may be corrupted or still syncing."
+                )
             data = chunk.get("data", "")
+            if not isinstance(data, str):
+                raise ValueError(
+                    f"Chunk '{child_id}' has unexpected data type: {type(data).__name__}. "
+                    "Possible encoding mismatch with LiveSync format."
+                )
             parts.append(data)
         return "".join(parts)
 
@@ -149,20 +157,20 @@ class CouchDBClient:
         doc = await self.get_doc(doc_id)
         now = int(time.time() * 1000)
 
-        # Delete old chunks
-        if doc and "children" in doc:
-            for child_id in doc["children"]:
-                chunk = await self.get_doc(child_id)
-                if chunk:
-                    await self.delete_doc(child_id, chunk["_rev"])
-
-        # Create new chunk
+        # Create new chunk FIRST — so old content is not lost if this fails
         chunk_id = self._generate_chunk_id()
         await self.put_doc(chunk_id, {
             "_id": chunk_id,
             "data": content,
             "type": "leaf",
         })
+
+        # Delete old chunks only after new chunk is safely written
+        if doc and "children" in doc:
+            for child_id in doc["children"]:
+                chunk = await self.get_doc(child_id)
+                if chunk:
+                    await self.delete_doc(child_id, chunk["_rev"])
 
         # Update or create metadata doc
         if doc:
