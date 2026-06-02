@@ -110,6 +110,16 @@ url = "https://your-server/mcp"
 bearer_token_env_var = "MCP_API_KEY"
 ```
 
+Codex support has been verified with this streamable HTTP configuration and the bearer token stored in the `MCP_API_KEY` environment variable.
+
+For MCP clients that ask for custom headers directly, use:
+
+| Key | Value |
+| --- | --- |
+| `Authorization` | `Bearer your_api_key` |
+
+Replace `your_api_key` with the exact value configured on the server as `MCP_API_KEY`.
+
 ### Claude.ai (Web)
 
 1. Settings > Connectors > Add custom connector
