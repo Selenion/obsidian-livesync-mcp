@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Added shared bearer API key authentication via `MCP_API_KEY` for MCP clients that use `Authorization: Bearer <token>`
+
+### Docs
+
+- Documented verified Codex streamable HTTP MCP configuration using `bearer_token_env_var = "MCP_API_KEY"`
+- Added explicit custom header key/value guidance for MCP clients that configure headers manually
+
 ## [1.0.1] - 2026-04-10
 
 ### Fixed
