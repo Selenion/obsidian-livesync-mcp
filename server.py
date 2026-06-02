@@ -13,6 +13,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions
 from mcp.server.transport_security import TransportSecuritySettings
 from couchdb import CouchDBClient
+from auth_config import StaticBearerTokenVerifier, select_auth_mode
 from oauth_provider import SimpleOAuthProvider
 
 # --- Configuration ---
@@ -20,22 +21,16 @@ COUCHDB_URL = os.environ.get("COUCHDB_URL", "http://localhost:5443")
 COUCHDB_USER = os.environ.get("COUCHDB_USER", "admin")
 COUCHDB_PASSWORD = os.environ.get("COUCHDB_PASSWORD", "")
 COUCHDB_DATABASE = os.environ.get("COUCHDB_DATABASE", "obsidian")
+MCP_API_KEY = os.environ.get("MCP_API_KEY", "")
 OAUTH_PASSWORD = os.environ.get("OAUTH_PASSWORD", "")
 OAUTH_CLIENT_ID = os.environ.get("OAUTH_CLIENT_ID", "")
 OAUTH_CLIENT_SECRET = os.environ.get("OAUTH_CLIENT_SECRET", "")
 SERVER_URL = os.environ.get("MCP_SERVER_URL", "https://localhost:8484")
 
-# --- Initialize OAuth ---
-oauth_provider = SimpleOAuthProvider(
-    server_url=SERVER_URL,
-    access_password=OAUTH_PASSWORD,
-    client_id=OAUTH_CLIENT_ID,
-    client_secret=OAUTH_CLIENT_SECRET,
-) if OAUTH_PASSWORD else None
-
 # --- Initialize MCP ---
 MCP_HOST = os.environ.get("MCP_HOST", "0.0.0.0")
 MCP_PORT = int(os.environ.get("MCP_PORT", "8484"))
+AUTH_MODE = select_auth_mode(MCP_API_KEY, OAUTH_PASSWORD)
 
 mcp_kwargs: dict[str, Any] = {
     "name": "Obsidian MCP Server",
@@ -47,7 +42,20 @@ mcp_kwargs: dict[str, Any] = {
     ),
 }
 
-if oauth_provider:
+if AUTH_MODE == "bearer":
+    mcp_kwargs["token_verifier"] = StaticBearerTokenVerifier(MCP_API_KEY)
+    mcp_kwargs["auth"] = AuthSettings(
+        issuer_url=AnyHttpUrl(SERVER_URL),
+        resource_server_url=AnyHttpUrl(f"{SERVER_URL}/mcp"),
+        required_scopes=["obsidian"],
+    )
+elif AUTH_MODE == "oauth":
+    oauth_provider = SimpleOAuthProvider(
+        server_url=SERVER_URL,
+        access_password=OAUTH_PASSWORD,
+        client_id=OAUTH_CLIENT_ID,
+        client_secret=OAUTH_CLIENT_SECRET,
+    )
     mcp_kwargs["auth_server_provider"] = oauth_provider
     mcp_kwargs["auth"] = AuthSettings(
         issuer_url=AnyHttpUrl(SERVER_URL),

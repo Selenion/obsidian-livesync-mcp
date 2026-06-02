@@ -74,6 +74,7 @@ cp .env.example .env
 | `COUCHDB_USER` | CouchDB admin username |
 | `COUCHDB_PASSWORD` | CouchDB admin password |
 | `COUCHDB_DATABASE` | Database name (default: `obsidian`) |
+| `MCP_API_KEY` | Shared bearer token for MCP clients such as Codex |
 | `OAUTH_PASSWORD` | Password for OAuth consent (leave empty to disable OAuth) |
 | `OAUTH_CLIENT_ID` | OAuth client ID for pre-registered client |
 | `OAUTH_CLIENT_SECRET` | OAuth client secret |
@@ -99,10 +100,14 @@ sudo systemctl start obsidian-mcp
 
 ## Connecting Clients
 
-### Claude Code (CLI)
+### Codex
 
-```bash
-claude mcp add --transport http obsidian https://your-server/mcp
+Set the same API key in the environment where Codex runs, then add a streamable HTTP MCP server to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.obsidian]
+url = "https://your-server/mcp"
+bearer_token_env_var = "MCP_API_KEY"
 ```
 
 ### Claude.ai (Web)
@@ -113,11 +118,16 @@ claude mcp add --transport http obsidian https://your-server/mcp
 
 ## Authentication
 
-The server supports OAuth 2.1 with authorization code flow + PKCE.
+The server supports two authentication modes:
+
+1. **Bearer API key** - set `MCP_API_KEY` and clients must send `Authorization: Bearer <MCP_API_KEY>`. This mode takes precedence if both bearer and OAuth settings are present.
+2. **OAuth 2.1** - set `OAUTH_PASSWORD` and the OAuth client settings to use the existing authorization code flow + PKCE.
+
+If neither `MCP_API_KEY` nor `OAUTH_PASSWORD` is set, the server fails at startup instead of running open.
 
 ### Current limitations
 
-Out of the box, only **Claude** (Claude.ai and Claude Code) is supported as a client. The pre-registered OAuth client has hardcoded `redirect_uris` for Claude's callback URLs and `scope: claudeai`.
+Out of the box, OAuth only supports **Claude** (Claude.ai and Claude Code) as a client. The pre-registered OAuth client has hardcoded `redirect_uris` for Claude's callback URLs and `scope: claudeai`.
 
 ### Adding other MCP clients
 
